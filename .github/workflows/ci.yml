@@ -20,8 +20,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Behavioural suite
+      # Run the behavioural suite in two zones on purpose: it is the suite that
+      # asserts the fiddly details, and a hardcoded local time passes in the
+      # author's zone while failing everywhere else. UTC is the CI default;
+      # Asia/Kolkata gives it a non-whole-hour offset to be wrong about.
+      - name: Behavioural suite (UTC)
         run: node test/logic.test.mjs
+        env:
+          TZ: UTC
+      - name: Behavioural suite (Asia/Kolkata)
+        run: node test/logic.test.mjs
+        env:
+          TZ: Asia/Kolkata
       - name: Worldwide timezone matrix
         run: node test/run-timezones.mjs
       - name: Package manifest sanity

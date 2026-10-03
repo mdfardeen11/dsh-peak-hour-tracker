@@ -157,7 +157,14 @@ const expanded = app.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
 assert.ok(expanded.find("details"), "clicking the sidebar panel reveals the extra rows");
 assert.equal(expanded.find("sidebar-panel").props["aria-expanded"], true, "the expanded panel reports its state");
 assert.ok(app.strip(expanded).includes("Switch"), "details name the switch instant");
-assert.ok(app.strip(expanded).includes("11:30 local · 06:00 UTC"), "details give the switch instant in both clocks");
+// The switch instant is fixed in UTC, so only its UTC half may be hardcoded;
+// the local half must follow whatever zone the host is in.
+const switchInstant = new Date("2026-09-16T06:00:00Z");
+const localShort = new Intl.DateTimeFormat(undefined, { hourCycle: "h23", hour: "2-digit", minute: "2-digit" });
+assert.ok(
+	app.strip(expanded).includes(localShort.format(switchInstant) + " local · 06:00 UTC"),
+	"details give the switch instant in both clocks\n  " + app.strip(expanded)
+);
 assert.ok(app.strip(expanded).includes("Today"), "details name the day's windows");
 assert.ok(app.strip(expanded).includes("off-peak is half price"), "details carry the pricing note");
 expanded.find("sidebar-panel").props.onClick();
