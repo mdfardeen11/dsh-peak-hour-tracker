@@ -45,9 +45,20 @@ assert.ok(capturedCss.includes(".dph-overlay,.dph-panel,.dph-rail{--dph-off:"), 
 assert.ok(capturedCss.includes(".dph-panel[data-state=off],.dph-rail[data-state=off]"), "the state variable is scoped to this plugin's own elements");
 assert.ok(!capturedCss.includes("}[data-state=off]{") && !capturedCss.startsWith("[data-state=off]{"), "no unscoped state rule can leak onto other components");
 assert.ok(capturedCss.includes("--dph-band-1:color-mix") && capturedCss.includes("--dph-band-2:color-mix"), "the dot carries two lighter bands derived from the state colour");
-assert.ok(capturedCss.includes(".dph-dot{box-sizing:border-box;flex:none;width:8px;height:8px;border-radius:50%;background:var(--dph-state"), "the dot is a filled circle");
+assert.ok(capturedCss.includes(".dph-dot{box-sizing:border-box;flex:none;width:8px;height:8px;border-radius:50%;corner-shape:round;background:var(--dph-state"), "the dot is a filled, truly circular dot");
 assert.ok(!capturedCss.includes(".dph-dot::after"), "the dot is not built from a stroked ring");
-console.log("ok - dot is a filled circle with lighter colour bands, and the tokens reach both placements");
+// The harness rounds its circular elements with `corner-shape:round`; without it
+// a border-radius circle inherits the app's squircle default and reads as a
+// rounded square.
+assert.ok(capturedCss.includes("border-radius:50%;corner-shape:round"), "circular elements opt back into a true circle");
+assert.ok(/\.dph-rail\{[^}]*border-radius:50%;corner-shape:round/.test(capturedCss), "the rail button opts back into a true circle");
+// --dsw-specific-menu is a translucent glass fill (58% light, 45% dark) that the
+// harness pairs with a backdrop blur, so the panel must supply its own opaque
+// base or the page shows straight through it.
+assert.ok(capturedCss.includes("background-color:var(--dsw-alias-bg-layer-1,#fff)"), "the panel paints an opaque surface under the tint");
+assert.ok(capturedCss.includes("background-image:linear-gradient(var(--dph-surface,transparent),var(--dph-surface,transparent))"), "the panel keeps the harness menu tint over the opaque base");
+assert.ok(!/\.dph-panel\{[^}]*[^-]background:var\(--dph-surface\)/.test(capturedCss), "the panel no longer paints the translucent menu fill alone");
+console.log("ok - dot is a filled circle with lighter colour bands, the panel is opaque, and the tokens reach both placements");
 //#endregion
 
 //#region the three stacked groups

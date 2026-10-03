@@ -63,6 +63,24 @@ node test/run-timezones.mjs                        # all 25 zones
 TZ=America/New_York node test/timezones.test.mjs   # just yours
 ```
 
+## Two harness quirks this plugin works around
+
+Both were found by reading the shipped stylesheets, not by guessing, and both are
+locked by tests:
+
+1. **Circles need `corner-shape:round`.** The harness shapes its UI with the CSS
+   `corner-shape` property, so a plain `border-radius:50%` element inherits the
+   app's squircle default and renders as a rounded square. Every circular element
+   the harness ships opts back in explicitly — its own 8px status dot is
+   `border-radius:50%;corner-shape:round` — and so do this plugin's dot and rail
+   button.
+2. **`--dsw-specific-menu` is a glass fill, not a surface.** It resolves to
+   `#f8f9fa94` (58% opacity) in light and `#43454a73` (45%) in dark, and the
+   harness always pairs it with a backdrop blur. Painting it alone lets the page
+   show through the panel, so the panel paints an opaque
+   `--dsw-alias-bg-layer-1` first and layers the menu tint over it with a
+   gradient: faithful to the menu tone, and fully opaque.
+
 ## The schedule it encodes
 
 From the official DeepSeek API pricing page
