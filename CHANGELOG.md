@@ -4,6 +4,29 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-03
+
+Two visual defects reported from the DeepSeek Harness desktop build, both
+diagnosed by reading the shipped stylesheets rather than guessing, and both now
+locked by tests.
+
+### Fixed
+
+- **The state dot rendered as a rounded square.** The harness shapes its UI with
+  the CSS `corner-shape` property, so `border-radius:50%` on its own inherits the
+  app's squircle default. Every circular element the harness ships opts back in
+  with `corner-shape:round` (its own 8px status dot does exactly this); the dot
+  and the sidebar rail button now do too.
+- **The floating panel was see-through.** `--dsw-specific-menu` is a glass fill
+  (`#f8f9fa94` light, `#43454a73` dark) that the harness always pairs with a
+  backdrop blur, so painting it alone let page text show through. The panel now
+  paints an opaque `--dsw-alias-bg-layer-1` base and layers the menu tint over
+  it, keeping the menu tone while being fully opaque.
+
+### Added
+
+- README section documenting both harness quirks for future maintainers.
+
 ## [1.0.0] - 2026-09-19
 
 First public release.
