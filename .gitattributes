@@ -1,0 +1,14 @@
+# Line endings are a correctness issue here, not a preference: the POSIX install
+# scripts fail with `bad interpreter: ...^M` if they are checked out with CRLF.
+# Everything in the repo is stored and checked out with LF, except PowerShell
+# scripts, which Windows tooling reads most comfortably as CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.yml text eol=lf
+*.svg text eol=lf
+
+# Binary-ish assets that must never be transformed.
+*.png binary
+*.ico binary
+*.woff2 binary

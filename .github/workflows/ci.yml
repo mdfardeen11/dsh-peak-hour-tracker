@@ -1,0 +1,28 @@
+name: ci
+
+# The tests are plain node scripts with no install step, so CI is just node.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Behavioural suite
+        run: node test/logic.test.mjs
+      - name: Worldwide timezone matrix
+        run: node test/run-timezones.mjs
+      - name: Package manifest sanity
+        run: node -e "const p=require('./package.json');if(p.name!=='dsh-peak-hour-tracker')throw new Error('unexpected name');if(!p.dsh||p.dsh.client.platform!=='web'||!p.dsh.bundle.patch)throw new Error('missing dsh declarations');console.log('manifest ok',p.name,p.version)"

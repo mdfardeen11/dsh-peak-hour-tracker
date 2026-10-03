@@ -1,0 +1,14 @@
+# dsh-peak-hour-tracker profile layer.
+#
+# Applied when this package is listed in a profile's `dsh.profile.bundles` —
+# which is what `dsh plugin --profile <name> add <spec>` does for you, because
+# package.json declares `dsh.bundle.patch`. The install scripts in this repo are
+# the no-pnpm alternative and skip this row, since they write the same entry
+# straight into the profile's own cordis.patch.yml instead.
+#
+# `insert` adds one Loader entry; `id` is the entry id the Plugins settings page
+# shows underneath the package name.
+
+- insert:
+    - id: ui-peak-hours
+      name: 'dsh-peak-hour-tracker'

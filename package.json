@@ -1,0 +1,59 @@
+{
+  "name": "dsh-peak-hour-tracker",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness plugin: peak/off-peak API pricing tracker with local and China clocks, a countdown to the next window, and a colour-coded state dot — floating or docked in the sidebar.",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "peak-hours",
+    "off-peak",
+    "pricing",
+    "clock",
+    "sidebar",
+    "web-ui"
+  ],
+  "author": "mdfardeen11 <mdfardeen11@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdfardeen11/dsh-peak-hour-tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mdfardeen11/dsh-peak-hour-tracker/issues"
+  },
+  "homepage": "https://github.com/mdfardeen11/dsh-peak-hour-tracker#readme",
+  "scripts": {
+    "test": "node test/logic.test.mjs && node test/run-timezones.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

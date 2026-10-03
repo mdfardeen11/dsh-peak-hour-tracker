@@ -1,0 +1,20 @@
+# Nothing here is published; the plugin ships only lib/ and cordis.patch.yml.
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Editors and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local scratch
+*.local
+/tmp/
+
+# Packaged release artifacts (attach these to a GitHub Release instead of
+# committing a binary) and the local npm cache used to build them.
+*.tgz
+.npm-cache/
