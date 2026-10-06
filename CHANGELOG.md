@@ -4,6 +4,40 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-06
+
+The tracker is no longer DeepSeek-only.
+
+### Added
+
+- **Xiaomi MiMo Token Plan schedule**: the night discount runs daily
+  16:00–24:00 UTC (Beijing 00:00–08:00, coefficient 0.8× credits), with full rate
+  the rest of the day. It has no weekday or holiday logic, so it is expressed in
+  the same registry as a single full-rate window (00:00–16:00 UTC, every day).
+- **Provider registry**: schedules are data — id, label, matcher, full-rate
+  windows, weekdays, holidays, both state labels, the countdown wording, and the
+  schedule note plus caveat the expanded panel shows. Adding a provider is one
+  entry.
+- **Automatic provider switching**: the tracked schedule follows the provider id
+  of the session in view, read from the harness's `modelSelection` projection
+  through the `uiSession` service. Every accessor is optional and guarded, and
+  the read re-runs on the shared one-second tick.
+- **Manual override**: `Follow session` / `DeepSeek` / `MiMo` chips in the
+  expanded panel, persisted like the placement preference.
+- **Honest unknown state**: a provider with no published time-based discount
+  shows `NO TIMED DISCOUNT` with no countdown, instead of a countdown that would
+  be wrong.
+- **Route caveats** in the expanded panel: "Off-peak pricing applies to the
+  official DeepSeek API." and "The 0.8× night rate applies to the MiMo Token
+  Plan." — because a discount belongs to the route you buy through, not to a
+  model name.
+- Design note at `docs/specs/2026-10-06-provider-schedules.md`.
+
+### Changed
+
+- The expanded panel's day row is now labelled by full-rate windows, and reads
+  "no full-rate window" when a day has none.
+
 ## [1.0.1] - 2026-10-03
 
 Two visual defects reported from the DeepSeek Harness desktop build, both

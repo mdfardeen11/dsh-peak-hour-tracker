@@ -192,4 +192,93 @@ assert.equal(app.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("sidebar
 console.log("ok - placement round-trips");
 //#endregion
 
+//#region MiMo schedule, chosen through the provider chips
+/** Expand the sidebar panel if it is collapsed, and return the expanded view. */
+function expandSidebar(iso) {
+	let view = app.sidebarAt(iso, { wide: true });
+	if (view.find("details") === undefined) {
+		view.find("sidebar-panel").props.onClick();
+		view = app.sidebarAt(iso, { wide: true });
+	}
+	return view;
+}
+
+app.overlayAt("2026-09-16T05:00:00Z").find("mode-toggle").props.onClick();
+const withChips = expandSidebar("2026-09-16T05:00:00Z");
+assert.ok(withChips.find("provider-chips"), "the expanded panel offers a schedule choice");
+assert.equal(withChips.find("provider").children[0], "DeepSeek", "the default schedule is DeepSeek");
+assert.ok(app.strip(withChips).includes("official DeepSeek API"), "the DeepSeek caveat is shown");
+withChips.find("provider-mimo").props.onClick();
+assert.equal(storage.prefs().override, "mimo", "pinning a schedule persists");
+app.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("mode-toggle").props.onClick();
+
+const mimoCases = [
+	{ at: "2026-09-16T00:30:00Z", state: "peak", label: "FULL RATE", eta: "→ night discount in 15h 30m" },
+	{ at: "2026-09-16T15:59:00Z", state: "peak", label: "FULL RATE", eta: "→ night discount in 1m 00s" },
+	{ at: "2026-09-16T16:00:00Z", state: "off", label: "NIGHT DISCOUNT", eta: "→ full rate in 8h 00m" },
+	{ at: "2026-09-16T23:59:00Z", state: "off", label: "NIGHT DISCOUNT", eta: "→ full rate in 1m 00s" },
+	{ at: "2026-09-19T17:00:00Z", state: "off", label: "NIGHT DISCOUNT", eta: "→ full rate in 7h 00m" }
+];
+for (const testCase of mimoCases) {
+	const view = app.overlayAt(testCase.at);
+	const text = app.strip(view);
+	assert.equal(view.find("panel").props["data-state"], testCase.state, "MiMo state at " + testCase.at);
+	assert.ok(text.includes(testCase.label), "MiMo label at " + testCase.at + " in\n  " + text);
+	assert.ok(text.includes(testCase.eta), "MiMo countdown at " + testCase.at + ", expected " + JSON.stringify(testCase.eta) + " in\n  " + text);
+}
+console.log("ok - MiMo: night discount daily 16:00–24:00 UTC, full rate otherwise, weekends included");
+
+app.overlayAt("2026-09-16T17:00:00Z").find("mode-toggle").props.onClick();
+const mimoChips = expandSidebar("2026-09-16T17:00:00Z");
+assert.equal(mimoChips.find("provider").children[0], "MiMo", "the expanded panel names the pinned provider");
+assert.ok(app.strip(mimoChips).includes("MiMo Token Plan"), "the MiMo caveat is shown");
+mimoChips.find("provider-auto").props.onClick();
+assert.equal(storage.prefs().override, null, "following the session clears the pin");
+assert.equal(expandSidebar("2026-09-16T17:00:00Z").find("provider").children[0], "DeepSeek", "with nothing detected it falls back to the default");
+console.log("ok - the provider chips pin, unpin, and persist a schedule");
+//#endregion
+
+//#region provider detection
+/**
+ * A stub `uiSession` + `sessions` pair reporting one model selection.
+ * @param provider - the provider id the projection reports.
+ * @param model - the model id the projection reports.
+ * @returns the service map for `loadPlugin`.
+ */
+function sessionServices(provider, model) {
+	const selection = { provider, model };
+	const binding = { session: { projections: { faceOf: (name) => (name === "modelSelection" ? { getSnapshot: () => selection } : undefined) } } };
+	return {
+		uiSession: { adapter: { current: { getSnapshot: () => ({ value: { key: "session-1" } }) } } },
+		sessions: { binding: (id) => (id === "session-1" ? binding : undefined) }
+	};
+}
+
+const mimoSession = await loadPlugin({ services: sessionServices("xiaomi", "mimo-v2.6-pro") });
+assert.ok(mimoSession.strip(mimoSession.overlayAt("2026-09-16T17:00:00Z")).includes("NIGHT DISCOUNT"), "a MiMo session selects the MiMo schedule with no override");
+const deepseekSession = await loadPlugin({ services: sessionServices("deepseek", "deepseek-v4-pro") });
+assert.ok(deepseekSession.strip(deepseekSession.overlayAt("2026-09-16T05:00:00Z")).includes("PEAK"), "a DeepSeek session selects the DeepSeek schedule");
+
+const unknownSession = await loadPlugin({ services: sessionServices("acme", "acme-1") });
+const unknownView = unknownSession.overlayAt("2026-09-16T05:00:00Z");
+assert.ok(unknownSession.strip(unknownView).includes("NO TIMED DISCOUNT"), "an unrecognised provider says so instead of showing a countdown");
+assert.ok(!unknownSession.strip(unknownView).includes("→"), "an unrecognised provider shows no countdown");
+unknownSession.overlayAt("2026-09-16T05:00:00Z").find("mode-toggle").props.onClick();
+unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("sidebar-panel").props.onClick();
+const unknownExpanded = unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
+assert.equal(unknownExpanded.find("provider").children[0], "acme", "the expanded panel names the unknown provider");
+assert.ok(unknownSession.strip(unknownExpanded).includes("No published peak/off-peak pricing"), "and explains why there is no countdown");
+assert.equal(unknownExpanded.nodes.filter((node) => node.props.className === "dph-times").length, 2, "the expanded panel shows the clocks and the provider row, but no switch or day rows");
+
+const resilient = await loadPlugin({
+	services: {
+		get uiSession() {
+			throw new Error("detection blew up");
+		}
+	}
+});
+assert.ok(resilient.strip(resilient.overlayAt("2026-09-16T05:00:00Z")).includes("PEAK"), "a throwing service falls back to the default schedule");
+console.log("ok - detection follows the session, and never breaks the panel when it cannot");
+//#endregion
+
 console.log("\nall peak-hours checks passed");

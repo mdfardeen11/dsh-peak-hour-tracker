@@ -1,7 +1,8 @@
 # dsh-peak-hour-tracker
 
-A **DeepSeek Harness** plugin that tracks DeepSeek's peak / off-peak API pricing
-hours. One small panel, three stacked groups, always visible:
+A **DeepSeek Harness** plugin that tracks the time-based API discounts of
+**DeepSeek** (peak / off-peak) and **Xiaomi MiMo** (Token Plan night discount).
+One small panel, three stacked groups, always visible:
 
 ```
 ●  OFF-PEAK
@@ -11,7 +12,8 @@ CHINA        00:48:12
 ```
 
 1. **the pricing state** — a filled dot circled by two lighter bands, in the
-   harness's own business blue (off-peak) or warn amber (peak)
+   harness's own business blue (discounted) or warn amber (full rate), labelled
+   in the provider's own words (`OFF-PEAK` for DeepSeek, `NIGHT DISCOUNT` for MiMo)
 2. **the clocks** — your local time and China (Beijing) time, stacked
 3. **the countdown** — time until the window actually flips
 
@@ -21,6 +23,8 @@ CHINA        00:48:12
 
 ## Features
 
+- **Two providers**, switched automatically to match the model your session is
+  using, with a manual pin when you want to plan around the other one.
 - **Two placements**, switchable from the panel and remembered:
   - **Floating** — a draggable panel. Grab it anywhere, clamped to the viewport.
   - **Sidebar** — *the same panel* as a row in the sidebar foot, directly above
@@ -81,7 +85,15 @@ locked by tests:
    `--dsw-alias-bg-layer-1` first and layers the menu tint over it with a
    gradient: faithful to the menu tone, and fully opaque.
 
-## The schedule it encodes
+## The schedules it encodes
+
+| | DeepSeek (official API) | MiMo (Token Plan) |
+|---|---|---|
+| Discounted | everything except Mon–Fri 01:00–04:00 and 06:00–10:00 UTC; Chinese public holidays count as discounted | **daily** 16:00–24:00 UTC (Beijing 00:00–08:00) |
+| Full rate | Mon–Fri 01:00–04:00, 06:00–10:00 UTC | daily 00:00–16:00 UTC |
+| Weekday logic | Mon–Fri only | none |
+| Discount | half price | 0.8× credits |
+| Panel wording | `OFF-PEAK` / `PEAK` | `NIGHT DISCOUNT` / `FULL RATE` |
 
 From the official DeepSeek API pricing page
 ([Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing)):
@@ -91,9 +103,35 @@ From the official DeepSeek API pricing page
 > other hours are off-peak, including weekends and Chinese public holidays in
 > full.**
 
+From the MiMo Token Plan FAQ
+([Plans and Pricing](https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Plans&Pricing)):
+
+> **Night discount rate:** During off-peak hours (Beijing time 00:00–08:00, i.e.
+> UTC 16:00–24:00), the Credits consumption coefficient is 0.8x.
+
 Chinese public holidays are **not** computed — that needs a yearly calendar. Put
 the dates in `CHINESE_HOLIDAY_YMD` in [`lib/client.js`](lib/client.js) as
 `"YYYY-MM-DD"` Beijing dates and those days count as off-peak.
+
+### Which schedule is shown, and where a discount does *not* apply
+
+A discount is a property of the **route you buy through**, not of a model name:
+
+- MiMo's 0.8× night rate is a **Token Plan** feature. The
+  [pay-as-you-go pricing](https://mimo.mi.com/docs/en-US/price/pay-as-you-go) is
+  flat — no time-based discount at all — and is explicitly "not interoperable
+  with the Token Plan package quota".
+- DeepSeek's peak/off-peak pricing is the **official API's**. Resellers set their
+  own terms and some publish different windows.
+
+The panel therefore follows the **provider id your session is using** (read from
+the harness's `modelSelection` projection), and shows that provider's caveat when
+you expand the panel. It cannot see your account plan — which plan you bought is
+account state, not session state — so if you are on MiMo pay-as-you-go, read the
+MiMo countdown as "when the Token Plan would be cheaper", not as your own bill.
+An unrecognised provider says `NO TIMED DISCOUNT` rather than showing a countdown
+that would be wrong. `Follow session` / `DeepSeek` / `MiMo` in the expanded panel
+pins the schedule manually when detection is not what you want.
 
 ## Requirements
 
@@ -214,7 +252,7 @@ this one has no options, so it deliberately has no card there.
 ## Tests
 
 ```bash
-node test/logic.test.mjs        # 15 behavioural checks
+node test/logic.test.mjs        # behavioural checks, both providers
 node test/run-timezones.mjs     # the same zone-sensitive checks in 25 zones
 ```
 

@@ -126,7 +126,7 @@ const instant = "2026-09-16T12:00:00Z";
 app.overlayAt(instant).find("mode-toggle").props.onClick();
 const today = detailValue(instant, "Today");
 const expected = referenceLocalRanges(Date.parse(instant));
-const expectedText = expected.length === 0 ? "no peak window" : expected.join(" · ");
+const expectedText = expected.length === 0 ? "no full-rate window" : expected.join(" · ");
 assert.equal(today, expectedText, `${zone}: the local day's peak ranges must be this zone's day\n  got      ${today}\n  expected ${expectedText}`);
 
 const switchAt = detailValue(instant, "Switch");
@@ -147,9 +147,65 @@ for (const iso of dstInstants) {
 	assert.equal(view.find("sidebar-panel").props["data-state"], referenceState(ms), `${zone}: state across a possible DST shift (${iso})`);
 	const rendered = detailValue(iso, "Today");
 	const reference = referenceLocalRanges(ms);
-	assert.equal(rendered, reference.length === 0 ? "no peak window" : reference.join(" · "), `${zone}: local ranges across a possible DST shift (${iso})`);
+	assert.equal(rendered, reference.length === 0 ? "no full-rate window" : reference.join(" · "), `${zone}: local ranges across a possible DST shift (${iso})`);
 }
 console.log(`  ok - four possible DST-transition days scanned correctly`);
+//#endregion
+
+//#region MiMo, pinned through the panel's provider chips
+/** The MiMo rule: full rate until 16:00 UTC, night discount from 16:00 to 24:00. */
+function mimoFull(ms) {
+	const d = new Date(ms);
+	return d.getUTCHours() * 60 + d.getUTCMinutes() < 960;
+}
+
+/**
+ * Full-rate ranges of the ambient local day under the MiMo rule.
+ * @param ms - epoch milliseconds.
+ * @returns formatted "HH:MM–HH:MM" ranges.
+ */
+function mimoLocalRanges(ms) {
+	const now = new Date(ms);
+	const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+	const ranges = [];
+	let open = -1;
+	for (let minute = 0; minute < 1440; minute += 1) {
+		const full = mimoFull(dayStart + minute * 60000);
+		if (full && open === -1) open = minute;
+		else if (!full && open !== -1) {
+			ranges.push(`${localShort.format(new Date(dayStart + open * 60000))}–${localShort.format(new Date(dayStart + minute * 60000))}`);
+			open = -1;
+		}
+	}
+	if (open !== -1) ranges.push(`${localShort.format(new Date(dayStart + open * 60000))}–${localShort.format(new Date(dayStart + 1440 * 60000))}`);
+	return ranges;
+}
+
+let chipView = app.sidebarAt(instant, { wide: true });
+if (chipView.find("details") === undefined) {
+	chipView.find("sidebar-panel").props.onClick();
+	chipView = app.sidebarAt(instant, { wide: true });
+}
+chipView.find("provider-mimo").props.onClick();
+
+const mimoToday = detailValue(instant, "Today");
+const mimoExpected = mimoLocalRanges(instant).join(" · ");
+assert.equal(mimoToday, mimoExpected, `${zone}: the MiMo full-rate ranges must follow this zone's day\n  got      ${mimoToday}\n  expected ${mimoExpected}`);
+
+// Back to the floating panel for the zone-independent MiMo facts.
+app.sidebarAt(instant, { wide: true }).find("mode-toggle").props.onClick();
+const mimoFixed = [
+	{ at: "2026-09-16T00:30:00Z", state: "peak", eta: "→ night discount in 15h 30m" },
+	{ at: "2026-09-16T16:00:00Z", state: "off", eta: "→ full rate in 8h 00m" },
+	{ at: "2026-09-19T17:00:00Z", state: "off", eta: "→ full rate in 7h 00m" }
+];
+for (const testCase of mimoFixed) {
+	const view = app.overlayAt(testCase.at);
+	const text = app.strip(view);
+	assert.equal(view.find("panel").props["data-state"], testCase.state, `${zone}: MiMo state at ${testCase.at}`);
+	assert.ok(text.includes(testCase.eta), `${zone}: MiMo countdown at ${testCase.at}, expected ${JSON.stringify(testCase.eta)} in\n  ${text}`);
+}
+console.log(`  ok - MiMo schedule is zone-independent here, with local ranges ${mimoToday}`);
 //#endregion
 
 console.log(`  zone ${zone} passed`);

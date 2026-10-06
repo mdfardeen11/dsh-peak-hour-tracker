@@ -49,6 +49,9 @@ function createFakeReact() {
 	};
 }
 
+/** The factory the bundle registered; captured once per process. */
+let capturedRegistration;
+
 /**
  * Install the browser globals the bundle reads, with in-memory storage.
  * @returns the storage double.
@@ -56,7 +59,11 @@ function createFakeReact() {
 function installBrowser() {
 	const memory = new Map();
 	globalThis.window = {
-		__ModuleLoader__: { load: () => {} },
+		__ModuleLoader__: {
+			load: (value) => {
+				capturedRegistration = value;
+			}
+		},
 		innerWidth: 1200,
 		innerHeight: 800,
 		localStorage: {
@@ -77,14 +84,13 @@ function installBrowser() {
  * Materialize the plugin bundle and return its registration plus test helpers.
  * @returns the loaded plugin, its slot entries, and the render helpers.
  */
-export async function loadPlugin() {
+export async function loadPlugin(options = {}) {
+	const services = options.services ?? {};
 	const memory = installBrowser();
-	let registration;
-	globalThis.window.__ModuleLoader__.load = (value) => {
-		registration = value;
-	};
-
-	await import(BUNDLE_PATH);
+	// The bundle is an ES module, so it evaluates once per process: reuse the
+	// factory captured by the first load, and build a fresh instance per call.
+	if (capturedRegistration === undefined) await import(BUNDLE_PATH);
+	const registration = capturedRegistration;
 	if (registration === undefined) throw new Error("the bundle did not register a factory");
 	if (registration.id !== PLUGIN_ID) throw new Error(`factory id is ${registration.id}, expected ${PLUGIN_ID}`);
 
@@ -120,7 +126,8 @@ export async function loadPlugin() {
 				return () => {};
 			}
 		},
-		effect: () => () => {}
+		effect: () => () => {},
+		get: (name) => services[name]
 	});
 
 	/**
