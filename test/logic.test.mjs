@@ -142,6 +142,27 @@ assert.equal(storage.prefs().twelveHour, false, "pressing again returns to 24-ho
 assert.ok(app.strip(afterClockPress).includes(localClock.format(clockInstant)), "24-hour time with seconds is back");
 app.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("mode-toggle").props.onClick();
 console.log("ok - only the time values toggle 12-hour time with AM/PM, without expanding the panel");
+
+// Regression: the floating panel drags by capturing the pointer, and a captured
+// press retargets the click to the panel, so a press on a time value must be
+// stopped before the drag handler sees it or the toggle is dead while floating.
+// Every interactive element inside the draggable panel has to guard this.
+const floatView = app.overlayAt("2026-09-16T05:00:00Z");
+for (const marker of ["local-time", "china-time", "mode-toggle"]) {
+	const node = floatView.find(marker);
+	assert.equal(typeof node.props.onPointerDown, "function", marker + " must stop the drag press in the floating panel");
+	let stopped = false;
+	node.props.onPointerDown({ stopPropagation: () => { stopped = true; } });
+	assert.ok(stopped, marker + " must stop the press reaching the drag handler");
+}
+const floatTime = floatView.find("local-time");
+assert.equal(storage.prefs().twelveHour, false, "start from 24-hour time");
+floatTime.props.onClick({ stopPropagation: () => {} });
+assert.equal(storage.prefs().twelveHour, true, "the floating panel's time toggle works");
+assert.ok(/AM|PM/.test(app.strip(app.overlayAt("2026-09-16T05:00:00Z"))), "the floating panel shows a day period after the press");
+floatView.find("local-time").props.onClick({ stopPropagation: () => {} });
+assert.equal(storage.prefs().twelveHour, false, "and toggles back");
+console.log("ok - the floating panel's time toggle survives its drag pointer capture");
 //#endregion
 
 //#region no tooltips, and the floating panel does not expand

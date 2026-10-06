@@ -4,6 +4,23 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-10-06
+
+### Fixed
+
+- **The 12/24-hour toggle did nothing in the floating panel.** The floating panel
+  drags by calling `setPointerCapture` on pointer-down, and a captured press
+  retargets the following `click` to the panel — so the time value's own click
+  handler never ran there. It worked in the sidebar only because that panel has
+  no drag handlers, which is why the bug survived the earlier tests: they pressed
+  the value's handler directly instead of the interaction path each placement
+  actually has. Each time value now stops the press before the drag handler sees
+  it, the same guard the placement button already had.
+- The regression test asserts the guard on every interactive element inside the
+  draggable panel (`local-time`, `china-time`, `mode-toggle`) and that the toggle
+  changes the rendered time while floating. Verified to fail with the guard
+  removed and pass with it in place.
+
 ## [1.1.4] - 2026-10-06
 
 ### Changed
