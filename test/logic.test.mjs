@@ -174,6 +174,13 @@ assert.equal(sidebarPanel.props["data-state"], "off", "the sidebar panel carries
 assert.equal(sidebarPanel.props.className, "dph-panel dph-panel--wide", "the sidebar panel is the same panel, widened for the column");
 assert.ok(wide.find("dot"), "the sidebar panel carries the state dot");
 assert.ok(wide.find("popout-icon"), "the sidebar shows the pop-out icon");
+// The glyph is the shipped box plus its corner arrowhead; only the shaft is
+// shortened, so the arrow stops short of the box instead of touching it.
+assert.deepEqual(
+	wide.find("popout-icon").children.map((child) => child.props.d),
+	["M9.5 2.5H4.5A2 2 0 0 0 2.5 4.5v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-5", "M10.5 2.5h3v3", "M13.5 2.5 11 5"],
+	"the pop-out glyph keeps its box and arrowhead, with the shaft stopping short of the corner"
+);
 assert.ok(wide.nodes.every((node) => node.props.title === undefined), "nothing in the sidebar tree has a tooltip");
 assert.equal(sidebarPanel.props["aria-expanded"], false, "the sidebar panel starts collapsed");
 

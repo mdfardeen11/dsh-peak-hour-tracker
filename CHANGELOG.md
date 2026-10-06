@@ -4,6 +4,18 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-10-06
+
+### Fixed
+
+- **The pop-out glyph is the original icon again, with the gap it was missing.**
+  1.1.1 redrew it — a smaller box with the arrow moved outside — which changed
+  the icon rather than fixing it. The shipped box and its corner arrowhead are
+  restored exactly as they were, and only the arrow's shaft is shortened so it
+  stops short of the box's open corner, leaving the gap between the two shapes. A
+  test now pins all three path geometries, so the icon cannot drift again without
+  a failing test.
+
 ## [1.1.1] - 2026-10-06
 
 ### Fixed
