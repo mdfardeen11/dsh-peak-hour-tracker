@@ -4,6 +4,23 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-10-06
+
+### Fixed
+
+- **Only the time values toggle 12/24-hour time.** 1.1.1 made the whole clocks
+  row the press target, so the `LOCAL` and `CHINA` labels and the empty grid
+  space beside the times were clickable too. Each time value is now its own small
+  target, padded only around its own glyphs: the row, its labels, and the gap
+  between them are not clickable. Tests assert both halves — the values respond,
+  the labels do not.
+- **The pop-out arrow finally has a visible gap.** 1.1.2 shortened only the shaft
+  and left the arrowhead one unit from the box's top edge — under a pixel at the
+  15px render size — so it still read as attached to the box. The box is
+  untouched, and the whole arrow is now offset into the corner, clearing both ends
+  of the box's opening by at least two units. The test computes that distance, so
+  the gap is verified rather than eyeballed.
+
 ## [1.1.2] - 2026-10-06
 
 ### Fixed

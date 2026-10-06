@@ -96,10 +96,16 @@ assert.ok(indexOfClass("dph-status") < indexOfClass("dph-times"), "the status gr
 assert.ok(indexOfClass("dph-times") < indexOfClass("dph-eta"), "the clocks group comes before the countdown");
 const grid = stacked.find("clocks");
 assert.ok(grid, "the clocks block renders as its own element");
-assert.equal(grid.props.className, "dph-times dph-clocks", "the clocks block is the interactive one");
+assert.equal(grid.props.className, "dph-times", "the clocks block itself is not a control");
+assert.equal(grid.props.onClick, undefined, "the clocks row is not the press target");
+assert.equal(grid.props.role, undefined, "the clocks row is not a button");
 assert.equal(grid.children.length, 4, "local and China time share one two-row grid");
 assert.equal(grid.children[0].children[0], "Local", "first time row is local");
 assert.equal(grid.children[2].children[0], "China", "second time row is China");
+assert.equal(grid.children[0].props.onClick, undefined, "the LOCAL label is not clickable");
+assert.equal(grid.children[2].props.onClick, undefined, "the CHINA label is not clickable");
+assert.equal(typeof grid.children[1].props.onClick, "function", "the local time value is clickable");
+assert.equal(typeof grid.children[3].props.onClick, "function", "the China time value is clickable");
 const eta = stacked.nodes.find((node) => node.props.className === "dph-eta");
 assert.equal(eta.children.length, 2, "the countdown separates its label from its value");
 assert.equal(eta.children[0].children[0], "→ off-peak in", "the countdown label names the target window");
@@ -114,25 +120,25 @@ const chinaClock12 = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Shanghai
 const clockInstant = new Date("2026-09-16T05:00:00Z");
 
 assert.ok(app.strip(app.overlayAt("2026-09-16T05:00:00Z")).includes(localClock.format(clockInstant)), "24-hour time with seconds is the default");
-grid.props.onClick({ stopPropagation: () => {} });
-assert.equal(storage.prefs().twelveHour, true, "pressing the clocks block switches to 12-hour time");
+grid.children[1].props.onClick({ stopPropagation: () => {} });
+assert.equal(storage.prefs().twelveHour, true, "pressing the local time switches to 12-hour time");
 const twelve = app.strip(app.overlayAt("2026-09-16T05:00:00Z"));
 assert.ok(twelve.includes(localClock12.format(clockInstant)), "the local clock reads in 12-hour form\n  " + twelve);
 assert.ok(twelve.includes(chinaClock12.format(clockInstant)), "the China clock reads in 12-hour form\n  " + twelve);
 assert.ok(/AM|PM/.test(twelve), "a day period is shown\n  " + twelve);
 assert.ok(!twelve.includes(localClock.format(clockInstant)), "seconds are dropped in 12-hour form\n  " + twelve);
 
-// In the sidebar the clocks block must not also expand the panel.
+// In the sidebar the time value must not also expand the panel.
 app.overlayAt("2026-09-16T05:00:00Z").find("mode-toggle").props.onClick();
 const clockRow = app.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
 assert.equal(clockRow.find("details"), undefined, "the sidebar panel starts collapsed");
-clockRow.find("clocks").props.onClick({ stopPropagation: () => {} });
+clockRow.find("china-time").props.onClick({ stopPropagation: () => {} });
 const afterClockPress = app.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
-assert.equal(afterClockPress.find("details"), undefined, "pressing the clocks does not expand the panel");
+assert.equal(afterClockPress.find("details"), undefined, "pressing a time does not expand the panel");
 assert.equal(storage.prefs().twelveHour, false, "pressing again returns to 24-hour time");
 assert.ok(app.strip(afterClockPress).includes(localClock.format(clockInstant)), "24-hour time with seconds is back");
 app.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("mode-toggle").props.onClick();
-console.log("ok - the clocks block toggles 12-hour time with AM/PM, without expanding the panel");
+console.log("ok - only the time values toggle 12-hour time with AM/PM, without expanding the panel");
 //#endregion
 
 //#region no tooltips, and the floating panel does not expand
@@ -174,13 +180,19 @@ assert.equal(sidebarPanel.props["data-state"], "off", "the sidebar panel carries
 assert.equal(sidebarPanel.props.className, "dph-panel dph-panel--wide", "the sidebar panel is the same panel, widened for the column");
 assert.ok(wide.find("dot"), "the sidebar panel carries the state dot");
 assert.ok(wide.find("popout-icon"), "the sidebar shows the pop-out icon");
-// The glyph is the shipped box plus its corner arrowhead; only the shaft is
-// shortened, so the arrow stops short of the box instead of touching it.
+// The glyph is the shipped box plus a separate corner arrow. Pin the paths, and
+// assert the gap numerically: the arrow must clear both ends of the box's open
+// corner, or the two shapes read as one connected outline (which is exactly how
+// this glyph was wrong twice).
 assert.deepEqual(
 	wide.find("popout-icon").children.map((child) => child.props.d),
-	["M9.5 2.5H4.5A2 2 0 0 0 2.5 4.5v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-5", "M10.5 2.5h3v3", "M13.5 2.5 11 5"],
-	"the pop-out glyph keeps its box and arrowhead, with the shaft stopping short of the corner"
+	["M9.5 2.5H4.5A2 2 0 0 0 2.5 4.5v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-5", "M11.5 1.5h3v3", "M14.5 1.5 11.5 4.5"],
+	"the pop-out glyph keeps the shipped box, with the arrow set clear of its open corner"
 );
+const boxCorners = [[9.5, 2.5], [13.5, 6.5]];
+const arrowPoints = [[11.5, 1.5], [14.5, 1.5], [14.5, 4.5], [11.5, 4.5]];
+const gap = Math.min(...arrowPoints.map(([ax, ay]) => Math.min(...boxCorners.map(([bx, by]) => Math.hypot(ax - bx, ay - by)))));
+assert.ok(gap >= 2, "the pop-out arrow clears the box corner by at least 2 units (about 2px at 15px); actual " + gap.toFixed(2));
 assert.ok(wide.nodes.every((node) => node.props.title === undefined), "nothing in the sidebar tree has a tooltip");
 assert.equal(sidebarPanel.props["aria-expanded"], false, "the sidebar panel starts collapsed");
 
@@ -307,7 +319,11 @@ unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("sidebar-p
 const unknownExpanded = unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
 assert.equal(unknownExpanded.find("provider").children[0], "acme", "the expanded panel names the unknown provider");
 assert.ok(unknownSession.strip(unknownExpanded).includes("No published peak/off-peak pricing"), "and explains why there is no countdown");
-assert.equal(unknownExpanded.nodes.filter((node) => node.props.className === "dph-times").length, 1, "the expanded panel shows the provider row only, with no switch or day rows");
+const unknownDetailChildren = unknownExpanded.find("details").children;
+assert.equal(unknownDetailChildren.filter((child) => child === null).length, 2, "the switch and day rows render nothing without a schedule");
+const unknownDetailRows = unknownDetailChildren.filter((child) => child !== null && child !== undefined && child.props.className === "dph-times");
+assert.equal(unknownDetailRows.length, 1, "the expanded panel shows one detail row");
+assert.equal(unknownDetailRows[0].children[0].children[0], "Provider", "and that row is the provider");
 
 const resilient = await loadPlugin({
 	services: {
