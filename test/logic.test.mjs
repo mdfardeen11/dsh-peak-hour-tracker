@@ -58,6 +58,9 @@ assert.ok(/\.dph-rail\{[^}]*border-radius:50%;corner-shape:round/.test(capturedC
 assert.ok(capturedCss.includes("background-color:var(--dsw-alias-bg-layer-1,#fff)"), "the panel paints an opaque surface under the tint");
 assert.ok(capturedCss.includes("background-image:linear-gradient(var(--dph-surface,transparent),var(--dph-surface,transparent))"), "the panel keeps the harness menu tint over the opaque base");
 assert.ok(!/\.dph-panel\{[^}]*[^-]background:var\(--dph-surface\)/.test(capturedCss), "the panel no longer paints the translucent menu fill alone");
+assert.ok(capturedCss.includes(".dph-time{cursor:pointer"), "the time values are press targets");
+assert.ok(!capturedCss.includes(".dph-time:hover"), "the time values must not highlight on hover");
+assert.ok(capturedCss.includes(".dph-time:focus-visible"), "the time values still show keyboard focus");
 console.log("ok - dot is a filled circle with lighter colour bands, the panel is opaque, and the tokens reach both placements");
 //#endregion
 

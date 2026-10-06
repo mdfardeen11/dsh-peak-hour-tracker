@@ -4,6 +4,14 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2026-10-06
+
+### Changed
+
+- **The time values no longer highlight under the pointer.** They stay clickable
+  — the cursor shows it, and keyboard focus still draws a ring — but the hover
+  background fill is gone. A test asserts the hover rule cannot come back.
+
 ## [1.1.3] - 2026-10-06
 
 ### Fixed
