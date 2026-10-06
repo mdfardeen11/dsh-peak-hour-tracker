@@ -4,6 +4,22 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-10-06
+
+### Fixed
+
+- **The pop-out icon's arrow touched the box.** The box now leaves its top-right
+  corner open with the arrow set out beyond it, so the two shapes read as one
+  glyph with a clear gap instead of a single connected outline.
+
+### Added
+
+- **Clicking the clocks toggles 12-hour time.** The block showing local and China
+  time swaps 24-hour-with-seconds for 12-hour with AM/PM (`4:48 PM`) and back,
+  and remembers the choice. Only that block is the target: it stops the press so
+  the surrounding sidebar row still expands, collapses, and switches placement
+  exactly as before.
+
 ## [1.1.0] - 2026-10-06
 
 The tracker is no longer DeepSeek-only.

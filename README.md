@@ -31,6 +31,9 @@ CHINA        00:48:12
     Settings; collapse the sidebar and it becomes the coloured dot in the rail.
 - **Click the sidebar panel** to expand it with the next switch instant (local
   and UTC), your local day's peak windows, and the pricing note.
+- **Click the clocks** to swap 24-hour time with seconds for 12-hour time with
+  AM/PM. Only that block is the target — it stops the press, so the surrounding
+  row keeps its own expand/collapse and placement behaviour.
 - **No tooltips, no hover information** — details are on click.
 - **Harness-native styling** — every colour, surface, border, radius and font
   comes from the live theme tokens, so it follows light/dark and the brand.

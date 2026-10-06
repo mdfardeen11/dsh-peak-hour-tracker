@@ -89,10 +89,14 @@ for (const testCase of cases) {
 }
 
 const stacked = app.overlayAt("2026-09-16T02:00:00Z");
-const classes = stacked.nodes.map((node) => node.props.className).filter((name) => typeof name === "string" && name.startsWith("dph-"));
-assert.ok(classes.indexOf("dph-status") < classes.indexOf("dph-times"), "the status group comes first");
-assert.ok(classes.indexOf("dph-times") < classes.indexOf("dph-eta"), "the clocks group comes before the countdown");
-const grid = stacked.nodes.find((node) => node.props.className === "dph-times");
+const classNames = stacked.nodes.map((node) => node.props.className).filter((name) => typeof name === "string");
+/** Document order of the first element carrying a given class token. */
+const indexOfClass = (token) => classNames.findIndex((name) => name.split(" ").includes(token));
+assert.ok(indexOfClass("dph-status") < indexOfClass("dph-times"), "the status group comes first");
+assert.ok(indexOfClass("dph-times") < indexOfClass("dph-eta"), "the clocks group comes before the countdown");
+const grid = stacked.find("clocks");
+assert.ok(grid, "the clocks block renders as its own element");
+assert.equal(grid.props.className, "dph-times dph-clocks", "the clocks block is the interactive one");
 assert.equal(grid.children.length, 4, "local and China time share one two-row grid");
 assert.equal(grid.children[0].children[0], "Local", "first time row is local");
 assert.equal(grid.children[2].children[0], "China", "second time row is China");
@@ -101,6 +105,34 @@ assert.equal(eta.children.length, 2, "the countdown separates its label from its
 assert.equal(eta.children[0].children[0], "→ off-peak in", "the countdown label names the target window");
 assert.equal(eta.children[1].props.className, "dph-eta-value", "the countdown value is its own element");
 console.log("ok - groups stack vertically as status, local+China, countdown, with labels spaced from their values");
+//#endregion
+
+//#region the clocks block toggles 12/24-hour time
+/** The 12-hour formatters the panel uses for its toggled view. */
+const localClock12 = new Intl.DateTimeFormat("en-US", { hour12: true, hour: "numeric", minute: "2-digit" });
+const chinaClock12 = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Shanghai", hour12: true, hour: "numeric", minute: "2-digit" });
+const clockInstant = new Date("2026-09-16T05:00:00Z");
+
+assert.ok(app.strip(app.overlayAt("2026-09-16T05:00:00Z")).includes(localClock.format(clockInstant)), "24-hour time with seconds is the default");
+grid.props.onClick({ stopPropagation: () => {} });
+assert.equal(storage.prefs().twelveHour, true, "pressing the clocks block switches to 12-hour time");
+const twelve = app.strip(app.overlayAt("2026-09-16T05:00:00Z"));
+assert.ok(twelve.includes(localClock12.format(clockInstant)), "the local clock reads in 12-hour form\n  " + twelve);
+assert.ok(twelve.includes(chinaClock12.format(clockInstant)), "the China clock reads in 12-hour form\n  " + twelve);
+assert.ok(/AM|PM/.test(twelve), "a day period is shown\n  " + twelve);
+assert.ok(!twelve.includes(localClock.format(clockInstant)), "seconds are dropped in 12-hour form\n  " + twelve);
+
+// In the sidebar the clocks block must not also expand the panel.
+app.overlayAt("2026-09-16T05:00:00Z").find("mode-toggle").props.onClick();
+const clockRow = app.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
+assert.equal(clockRow.find("details"), undefined, "the sidebar panel starts collapsed");
+clockRow.find("clocks").props.onClick({ stopPropagation: () => {} });
+const afterClockPress = app.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
+assert.equal(afterClockPress.find("details"), undefined, "pressing the clocks does not expand the panel");
+assert.equal(storage.prefs().twelveHour, false, "pressing again returns to 24-hour time");
+assert.ok(app.strip(afterClockPress).includes(localClock.format(clockInstant)), "24-hour time with seconds is back");
+app.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("mode-toggle").props.onClick();
+console.log("ok - the clocks block toggles 12-hour time with AM/PM, without expanding the panel");
 //#endregion
 
 //#region no tooltips, and the floating panel does not expand
@@ -268,7 +300,7 @@ unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true }).find("sidebar-p
 const unknownExpanded = unknownSession.sidebarAt("2026-09-16T05:00:00Z", { wide: true });
 assert.equal(unknownExpanded.find("provider").children[0], "acme", "the expanded panel names the unknown provider");
 assert.ok(unknownSession.strip(unknownExpanded).includes("No published peak/off-peak pricing"), "and explains why there is no countdown");
-assert.equal(unknownExpanded.nodes.filter((node) => node.props.className === "dph-times").length, 2, "the expanded panel shows the clocks and the provider row, but no switch or day rows");
+assert.equal(unknownExpanded.nodes.filter((node) => node.props.className === "dph-times").length, 1, "the expanded panel shows the provider row only, with no switch or day rows");
 
 const resilient = await loadPlugin({
 	services: {
