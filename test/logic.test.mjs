@@ -165,6 +165,28 @@ assert.equal(storage.prefs().twelveHour, false, "and toggles back");
 console.log("ok - the floating panel's time toggle survives its drag pointer capture");
 //#endregion
 
+//#region the dot must survive a collapsed sidebar (Windows hides the whole foot)
+// Regression: on Windows the harness hides the sidebar's panel list, region and
+// foot when the sidebar is collapsed, so a widget docked in the foot disappears.
+// The frame-wide overlay carries a stand-in dot, revealed by CSS only in that
+// state, so the collapse never loses the indicator.
+app.overlayAt("2026-09-16T05:00:00Z").find("mode-toggle").props.onClick();
+const dockedOverlay = app.overlayAt("2026-09-16T05:00:00Z");
+assert.ok(dockedOverlay.find("raildot"), "in sidebar mode the overlay carries the collapsed-sidebar dot");
+assert.equal(dockedOverlay.find("raildot").props["data-state"], "off", "the stand-in dot carries the live state");
+assert.ok(dockedOverlay.find("dot"), "and it is the same dot");
+assert.equal(dockedOverlay.find("float"), undefined, "and the floating panel itself is not rendered in sidebar mode");
+assert.ok(capturedCss.includes("html[data-windows-titlebar] body:has([data-sidebar-collapsed]) .dph-raildot{display:flex}"), "the stand-in dot is revealed only while the sidebar is collapsed on Windows");
+assert.ok(capturedCss.includes(".dph-raildot{box-sizing:border-box;position:absolute;left:10px;bottom:12px;display:none"), "and it is hidden until that state arrives");
+assert.ok(capturedCss.includes(".dph-raildot[data-state=peak]") && capturedCss.includes(".dph-raildot[data-state=off]"), "the stand-in dot takes the state colour");
+dockedOverlay.find("raildot").props.onClick();
+assert.equal(storage.prefs().mode, "float", "pressing the stand-in dot floats the panel");
+const floatOverlay = app.overlayAt("2026-09-16T05:00:00Z");
+assert.ok(floatOverlay.find("float"), "the floating panel comes back");
+assert.equal(floatOverlay.find("raildot"), undefined, "and the stand-in dot is gone in float mode");
+console.log("ok - a collapsed sidebar still shows the dot, from the frame-wide overlay");
+//#endregion
+
 //#region no tooltips, and the floating panel does not expand
 const floatPanel = stacked.find("panel");
 assert.equal(floatPanel.props.title, undefined, "the floating panel carries no tooltip");

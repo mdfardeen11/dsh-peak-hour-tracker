@@ -31,6 +31,10 @@ CHINA        00:48:12
     Settings; collapse the sidebar and it becomes the coloured dot in the rail.
 - **Click the sidebar panel** to expand it with the next switch instant (local
   and UTC), your local day's peak windows, and the pricing note.
+- **Collapse-proof indicator** — collapsing the sidebar keeps the coloured dot:
+  on Windows the harness hides the whole sidebar foot (and any widget docked in
+  it) when the sidebar collapses, so the dot is drawn from the frame-wide overlay
+  instead and stays visible in the 56px rail.
 - **Click the clocks** to swap 24-hour time with seconds for 12-hour time with
   AM/PM. Only that block is the target — it stops the press, so the surrounding
   row keeps its own expand/collapse and placement behaviour.

@@ -4,6 +4,24 @@ All notable changes to this plugin are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-10-07
+
+### Fixed
+
+- **The dot no longer disappears when the sidebar is collapsed.** On Windows the
+  harness hides the sidebar's panel list, session region **and foot** — all three —
+  while the sidebar is collapsed, and `sidebar.footer.action` entries live inside
+  that foot, so the docked tracker (and the dot it draws in the rail) went away
+  with it. The frame-wide overlay now carries a stand-in dot, revealed by CSS only
+  while the sidebar is collapsed in Windows titlebar mode
+  (`html[data-windows-titlebar] body:has([data-sidebar-collapsed])`), so it cannot
+  double up with the entry's own rail button on macOS or Linux.
+
+  Investigation note: this is harness layout behaviour, not a crash. An earlier
+  hypothesis of a render error was wrong — the reported screenshot's own pixels
+  settle it (content only in the top ~130px, background ±1 below), which is what a
+  `display: none` foot looks like.
+
 ## [1.1.5] - 2026-10-06
 
 ### Fixed
